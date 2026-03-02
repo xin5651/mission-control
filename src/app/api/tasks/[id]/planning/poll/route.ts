@@ -44,7 +44,10 @@ async function handlePlanningCompletion(taskId: string, parsed: any, messages: a
     );
 
     // Create the agents in the workspace and track first agent for auto-assign
-    if (parsed.agents && parsed.agents.length > 0) {
+    // Skip dynamic agent creation when ALLOW_DYNAMIC_AGENTS is explicitly set to 'false'
+    const allowDynamicAgents = process.env.ALLOW_DYNAMIC_AGENTS !== 'false';
+
+    if (allowDynamicAgents && parsed.agents && parsed.agents.length > 0) {
       const insertAgent = db.prepare(`
         INSERT INTO agents (id, workspace_id, name, role, description, avatar_emoji, status, soul_md, created_at, updated_at)
         VALUES (?, (SELECT workspace_id FROM tasks WHERE id = ?), ?, ?, ?, ?, 'standby', ?, datetime('now'), datetime('now'))
@@ -64,6 +67,8 @@ async function handlePlanningCompletion(taskId: string, parsed: any, messages: a
           agent.soul_md || ''
         );
       }
+    } else if (!allowDynamicAgents && parsed.agents && parsed.agents.length > 0) {
+      console.log(`[Planning Poll] Dynamic agent generation disabled (ALLOW_DYNAMIC_AGENTS=false), skipping creation of ${parsed.agents.length} agent(s)`);
     }
 
     return firstAgentId;
