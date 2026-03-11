@@ -646,6 +646,16 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
+## ☕ Support
+
+If Mission Control has been useful to you, consider buying me a coffee!
+
+<a href="https://buymeacoffee.com/crshdn" target="_blank">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="50" />
+</a>
+
+---
+
 <p align="center">
   <strong>Happy orchestrating!</strong> 🚀
 </p>
