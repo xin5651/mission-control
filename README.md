@@ -659,3 +659,8 @@ If Mission Control has been useful to you, consider buying me a coffee!
 <p align="center">
   <strong>Happy orchestrating!</strong> 🚀
 </p>
+
+
+## 中文文档
+- docs/zh-CN/README.zh-CN.md
+- docs/plan/OPENCLAW_CONTROL_PLANE_REFACTOR.zh-CN.md
