@@ -25,6 +25,8 @@ export default function SettingsPage() {
 
   const [planLoading, setPlanLoading] = useState(false);
   const [applyPlanResult, setApplyPlanResult] = useState<any>(null);
+  const [applyLoading, setApplyLoading] = useState(false);
+  const [applyResult, setApplyResult] = useState<any>(null);
 
   const generateApplyPlan = async () => {
     setPlanLoading(true);
@@ -48,7 +50,32 @@ export default function SettingsPage() {
     }
   };
 
-  const runDryRun = async () => {
+  
+  const executeApply = async () => {
+    if (!confirm('确认执行配置变更？会先生成备份与命令计划。')) return;
+    setApplyLoading(true);
+    try {
+      const res = await fetch('/api/openclaw/config/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          confirm: true,
+          desired: {
+            defaultModel: desiredModel,
+            imageModelPrimary: desiredImageModel,
+            toolsProfile: 'full',
+            sandboxMode: 'off',
+          },
+        }),
+      });
+      const data = await res.json();
+      setApplyResult(data);
+    } finally {
+      setApplyLoading(false);
+    }
+  };
+
+const runDryRun = async () => {
     setDryRunLoading(true);
     try {
       const res = await fetch('/api/openclaw/config/dry-run', {
@@ -145,6 +172,9 @@ export default function SettingsPage() {
             >
               <Save className="w-4 h-4" />
               {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
+            <button onClick={executeApply} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600" disabled={applyLoading}>
+              {applyLoading ? '执行中...' : '执行变更（Step 123）'}
             </button>
           </div>
         </div>
@@ -308,6 +338,9 @@ export default function SettingsPage() {
             <button onClick={generateApplyPlan} className="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600" disabled={planLoading}>
               {planLoading ? '生成中...' : '生成应用计划（Step 122）'}
             </button>
+            <button onClick={executeApply} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600" disabled={applyLoading}>
+              {applyLoading ? '执行中...' : '执行变更（Step 123）'}
+            </button>
           </div>
 
           {dryRunResult && (
@@ -315,6 +348,9 @@ export default function SettingsPage() {
           )}
           {applyPlanResult && (
             <pre className="mt-4 p-3 bg-mc-bg border border-indigo-500/40 rounded text-xs overflow-auto max-h-80">{JSON.stringify(applyPlanResult, null, 2)}</pre>
+          )}
+          {applyResult && (
+            <pre className="mt-4 p-3 bg-mc-bg border border-red-500/40 rounded text-xs overflow-auto max-h-80">{JSON.stringify(applyResult, null, 2)}</pre>
           )}
         </section>
 
