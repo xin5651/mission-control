@@ -22,6 +22,32 @@ export default function SettingsPage() {
   const [desiredModel, setDesiredModel] = useState('ztab/gemini-3.1-pro');
   const [desiredImageModel, setDesiredImageModel] = useState('ztab/grok-imagine-image');
 
+
+  const [planLoading, setPlanLoading] = useState(false);
+  const [applyPlanResult, setApplyPlanResult] = useState<any>(null);
+
+  const generateApplyPlan = async () => {
+    setPlanLoading(true);
+    try {
+      const res = await fetch('/api/openclaw/config/apply-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          desired: {
+            defaultModel: desiredModel,
+            imageModelPrimary: desiredImageModel,
+            toolsProfile: 'full',
+            sandboxMode: 'off',
+          },
+        }),
+      });
+      const data = await res.json();
+      setApplyPlanResult(data);
+    } finally {
+      setPlanLoading(false);
+    }
+  };
+
   const runDryRun = async () => {
     setDryRunLoading(true);
     try {
@@ -275,12 +301,20 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <button onClick={runDryRun} className="mt-4 px-4 py-2 bg-mc-accent text-mc-bg rounded hover:bg-mc-accent/90" disabled={dryRunLoading}>
-            {dryRunLoading ? '预览中...' : '预览变更（Dry-Run）'}
-          </button>
+          <div className="mt-4 flex gap-3"> 
+            <button onClick={runDryRun} className="px-4 py-2 bg-mc-accent text-mc-bg rounded hover:bg-mc-accent/90" disabled={dryRunLoading}>
+              {dryRunLoading ? '预览中...' : '预览变更（Dry-Run）'}
+            </button>
+            <button onClick={generateApplyPlan} className="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600" disabled={planLoading}>
+              {planLoading ? '生成中...' : '生成应用计划（Step 122）'}
+            </button>
+          </div>
 
           {dryRunResult && (
             <pre className="mt-4 p-3 bg-mc-bg border border-mc-border rounded text-xs overflow-auto max-h-80">{JSON.stringify(dryRunResult, null, 2)}</pre>
+          )}
+          {applyPlanResult && (
+            <pre className="mt-4 p-3 bg-mc-bg border border-indigo-500/40 rounded text-xs overflow-auto max-h-80">{JSON.stringify(applyPlanResult, null, 2)}</pre>
           )}
         </section>
 
