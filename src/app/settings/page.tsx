@@ -17,6 +17,32 @@ export default function SettingsPage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [dryRunLoading, setDryRunLoading] = useState(false);
+  const [dryRunResult, setDryRunResult] = useState<any>(null);
+  const [desiredModel, setDesiredModel] = useState('ztab/gemini-3.1-pro');
+  const [desiredImageModel, setDesiredImageModel] = useState('ztab/grok-imagine-image');
+
+  const runDryRun = async () => {
+    setDryRunLoading(true);
+    try {
+      const res = await fetch('/api/openclaw/config/dry-run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          desired: {
+            defaultModel: desiredModel,
+            imageModelPrimary: desiredImageModel,
+            toolsProfile: 'full',
+          },
+        }),
+      });
+      const data = await res.json();
+      setDryRunResult(data);
+    } finally {
+      setDryRunLoading(false);
+    }
+  };
+
   useEffect(() => {
     setConfig(getConfig());
   }, []);
@@ -228,6 +254,34 @@ export default function SettingsPage() {
               </div>
             </div>
           </label>
+        </section>
+
+
+        <section className="mb-8 p-6 bg-mc-bg-secondary border border-mc-border rounded-lg">
+          <div className="flex items-center gap-2 mb-4">
+            <Settings className="w-5 h-5 text-mc-accent" />
+            <h2 className="text-xl font-semibold text-mc-text">OpenClaw Config Dry-Run（预览）</h2>
+          </div>
+          <p className="text-sm text-mc-text-secondary mb-4">先预览变更，不会写入 openclaw.json。</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-mc-text mb-2">目标默认模型</label>
+              <input value={desiredModel} onChange={(e) => setDesiredModel(e.target.value)} className="w-full px-4 py-2 bg-mc-bg border border-mc-border rounded text-mc-text" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-mc-text mb-2">目标图像模型</label>
+              <input value={desiredImageModel} onChange={(e) => setDesiredImageModel(e.target.value)} className="w-full px-4 py-2 bg-mc-bg border border-mc-border rounded text-mc-text" />
+            </div>
+          </div>
+
+          <button onClick={runDryRun} className="mt-4 px-4 py-2 bg-mc-accent text-mc-bg rounded hover:bg-mc-accent/90" disabled={dryRunLoading}>
+            {dryRunLoading ? '预览中...' : '预览变更（Dry-Run）'}
+          </button>
+
+          {dryRunResult && (
+            <pre className="mt-4 p-3 bg-mc-bg border border-mc-border rounded text-xs overflow-auto max-h-80">{JSON.stringify(dryRunResult, null, 2)}</pre>
+          )}
         </section>
 
         {/* Environment Variables Note */}
