@@ -27,6 +27,11 @@ export default function SettingsPage() {
   const [applyPlanResult, setApplyPlanResult] = useState<any>(null);
   const [applyLoading, setApplyLoading] = useState(false);
   const [applyResult, setApplyResult] = useState<any>(null);
+  const [applyRunLoading, setApplyRunLoading] = useState(false);
+  const [applyRunResult, setApplyRunResult] = useState<any>(null);
+  const [rollbackPath, setRollbackPath] = useState('');
+  const [rollbackRunLoading, setRollbackRunLoading] = useState(false);
+  const [rollbackRunResult, setRollbackRunResult] = useState<any>(null);
 
   const generateApplyPlan = async () => {
     setPlanLoading(true);
@@ -72,6 +77,50 @@ export default function SettingsPage() {
       setApplyResult(data);
     } finally {
       setApplyLoading(false);
+    }
+  };
+
+
+  const executeApplyRun = async () => {
+    if (!confirm('确认真实执行配置变更？需要双重确认并会自动备份。')) return;
+    setApplyRunLoading(true);
+    try {
+      const res = await fetch('/api/openclaw/config/apply-run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          confirm: true,
+          confirmText: 'APPLY_NOW',
+          desired: {
+            defaultModel: desiredModel,
+            imageModelPrimary: desiredImageModel,
+            toolsProfile: 'full',
+            sandboxMode: 'off',
+          },
+        }),
+      });
+      const data = await res.json();
+      setApplyRunResult(data);
+      if (data?.backupPath) setRollbackPath(data.backupPath);
+    } finally {
+      setApplyRunLoading(false);
+    }
+  };
+
+  const executeRollbackRun = async () => {
+    if (!rollbackPath) return alert('请先提供 backupPath');
+    if (!confirm('确认执行回滚？')) return;
+    setRollbackRunLoading(true);
+    try {
+      const res = await fetch('/api/openclaw/config/rollback-run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: true, confirmText: 'ROLLBACK_NOW', backupPath: rollbackPath }),
+      });
+      const data = await res.json();
+      setRollbackRunResult(data);
+    } finally {
+      setRollbackRunLoading(false);
     }
   };
 
@@ -175,6 +224,9 @@ const runDryRun = async () => {
             </button>
             <button onClick={executeApply} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600" disabled={applyLoading}>
               {applyLoading ? '执行中...' : '执行变更（Step 123）'}
+            </button>
+            <button onClick={executeApplyRun} className="px-4 py-2 bg-black text-white rounded hover:bg-neutral-800" disabled={applyRunLoading}>
+              {applyRunLoading ? "执行中..." : "真实执行（Step 124）"}
             </button>
           </div>
         </div>
@@ -352,6 +404,18 @@ const runDryRun = async () => {
           {applyResult && (
             <pre className="mt-4 p-3 bg-mc-bg border border-red-500/40 rounded text-xs overflow-auto max-h-80">{JSON.stringify(applyResult, null, 2)}</pre>
           )}
+          {applyRunResult && (
+            <pre className="mt-4 p-3 bg-mc-bg border border-black/40 rounded text-xs overflow-auto max-h-80">{JSON.stringify(applyRunResult, null, 2)}</pre>
+          )}
+
+          <div className="mt-4 p-3 border border-mc-border rounded">
+            <div className="text-sm mb-2">回滚执行（Step 124）</div>
+            <input value={rollbackPath} onChange={(e) => setRollbackPath(e.target.value)} placeholder="/root/.openclaw/openclaw.json.bak.step124-apply-run..." className="w-full px-3 py-2 bg-mc-bg border border-mc-border rounded text-xs" />
+            <button onClick={executeRollbackRun} className="mt-2 px-3 py-2 bg-amber-600 text-white rounded" disabled={rollbackRunLoading}>
+              {rollbackRunLoading ? "回滚中..." : "执行回滚（Step 124）"}
+            </button>
+            {rollbackRunResult && <pre className="mt-2 p-2 bg-mc-bg border border-amber-500/40 rounded text-xs overflow-auto max-h-64">{JSON.stringify(rollbackRunResult, null, 2)}</pre>}
+          </div>
         </section>
 
         {/* Environment Variables Note */}
